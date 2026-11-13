@@ -35,3 +35,4 @@ async def create_all_tables() -> None:
     from app.db.models import user, case, alert_assignment, audit_log  # noqa: F401
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+

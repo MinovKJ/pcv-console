@@ -48,3 +48,4 @@ async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
         access_token=create_access_token(user.id, user.role.value),
         refresh_token=create_refresh_token(user.id),
     )
+

@@ -47,3 +47,4 @@ class TriageRunOut(BaseModel):
     accused_post: list[str]
     metrics: dict[str, Any]
     verifier_source: str              # "pcv" or "stub"
+

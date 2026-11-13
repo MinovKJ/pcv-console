@@ -7,3 +7,4 @@ class AlertOut(BaseModel):
     label: str | None
     submitted_by: int
     submitted_at: datetime
+

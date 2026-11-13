@@ -79,3 +79,4 @@ async def update_user(
     await db.refresh(user)
     await record_audit(db, admin.id, "UPDATE_USER", "user", str(user.id), request)
     return UserOut.model_validate(user)
+

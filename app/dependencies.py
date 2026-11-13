@@ -67,3 +67,4 @@ async def record_audit(
     )
     db.add(log)
     await db.commit()
+

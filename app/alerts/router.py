@@ -38,3 +38,4 @@ async def get_alert(
     if not doc:
         raise HTTPException(status_code=404, detail="Alert not found")
     return doc
+

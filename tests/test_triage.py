@@ -138,3 +138,4 @@ async def test_clean_graph_not_blocked():
     assert result.llm_blocked is False
     assert result.injection_guard["is_clean"] is True
     assert result.injection_guard["explicit_hit_count"] == 0
+

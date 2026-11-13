@@ -103,3 +103,4 @@ def test_summary_string_format():
     summary = result.summary()
     assert "InjectionGuard" in summary
     assert "EXPLICIT" in summary
+

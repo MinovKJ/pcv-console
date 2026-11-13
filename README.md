@@ -195,3 +195,4 @@ pcv-console/
 ## License
 
 MIT — this console project is public and independent. The PCV research verifier (imported as a dependency) remains under its own private license until paper publication.
+

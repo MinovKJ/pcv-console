@@ -121,3 +121,4 @@ async def cases_by_severity(
         {"$sort": {"count": -1}},
     ]
     return [doc async for doc in mongo["alerts"].aggregate(pipeline)]
+

@@ -19,3 +19,4 @@ class AuditLog(Base):
     detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+

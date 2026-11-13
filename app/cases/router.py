@@ -119,3 +119,4 @@ async def list_case_alerts(
         select(AlertAssignment).where(AlertAssignment.case_id == case_id)
     )
     return [AlertAssignOut.model_validate(a) for a in result.scalars()]
+

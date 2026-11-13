@@ -4,21 +4,25 @@ JWT + password utilities.
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.config import get_settings
 
 _cfg = get_settings()
-_pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(plain: str) -> str:
-    return _pwd_ctx.hash(plain)
+    pwd_bytes = plain.encode("utf-8")[:72]
+    return bcrypt.hashpw(pwd_bytes, bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return _pwd_ctx.verify(plain, hashed)
+    pwd_bytes = plain.encode("utf-8")[:72]
+    try:
+        return bcrypt.checkpw(pwd_bytes, hashed.encode("utf-8"))
+    except Exception:
+        return False
 
 
 def _create_token(data: dict[str, Any], expires_delta: timedelta) -> str:
@@ -44,3 +48,4 @@ def create_refresh_token(user_id: int) -> str:
 def decode_token(token: str) -> dict[str, Any]:
     """Raises JWTError if invalid or expired."""
     return jwt.decode(token, _cfg.jwt_secret_key, algorithms=[_cfg.jwt_algorithm])
+

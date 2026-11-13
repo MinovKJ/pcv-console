@@ -94,3 +94,4 @@ def test_empty_claims_no_crash():
 def test_empty_graph_no_crash():
     result = run_verification([], [], DIRECT_CLAIMS, PATH_CLAIMS, ACCUSED)
     _assert_well_formed(result)
+

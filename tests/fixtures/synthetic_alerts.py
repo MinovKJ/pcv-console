@@ -83,3 +83,4 @@ INJECTED_ALERT_SUBTLE = {
         ],
     },
 }
+

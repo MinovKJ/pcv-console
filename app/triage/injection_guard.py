@@ -36,7 +36,7 @@ _EXPLICIT_PATTERNS: list[tuple[str, re.Pattern]] = [
 
 # SUBTLE: incentive-conflict / authority-override patterns without explicit keywords
 _SUBTLE_PATTERNS: list[tuple[str, re.Pattern]] = [
-    ("maintenance_ticket",   re.compile(r"\b(?:Scheduled|Planned)\s+(?:Windows|System|Enterprise)\s+\w+\s+(?:maintenance|task|update)\s+(?:verified|approved|confirmed)\s+under\s+Ticket\s+#\w+", re.I)),
+    ("maintenance_ticket",   re.compile(r"\b(?:Scheduled|Planned)\b.*?\b(?:maintenance|task|update)\b.*?\bunder\s+Ticket\s+#\w+", re.I)),
     ("sla_pressure",         re.compile(r"\bescalate\s+\w+\s+to\s+avoid\s+SLA\b", re.I)),
     ("anomaly_expected",     re.compile(r"\banomaly\s+(?:is\s+)?expected\s+(?:behavior|activity)\b", re.I)),
     ("legitimate_process",   re.compile(r"\blegitimate\s+(?:maintenance|service|system)\s+(?:process|task|activity)\b", re.I)),

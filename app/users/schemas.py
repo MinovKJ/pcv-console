@@ -24,3 +24,4 @@ class UserOut(BaseModel):
     role: UserRole
     is_active: bool
     created_at: datetime
+

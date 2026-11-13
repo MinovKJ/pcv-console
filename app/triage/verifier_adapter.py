@@ -76,3 +76,4 @@ def _stub_verification(
         "rejected_paths": [{"path_claim": p, "status": "UNVERIFIABLE", "reason": "stub"} for p in path_claims],
         "accepted_nodes": [],
     }
+

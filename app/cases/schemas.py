@@ -42,3 +42,4 @@ class AlertAssignOut(BaseModel):
     case_id: int
     assigned_by: int
     assigned_at: datetime
+

@@ -38,3 +38,4 @@ class Case(Base):
     alert_assignments: Mapped[list["AlertAssignment"]] = relationship(
         "AlertAssignment", back_populates="case", lazy="select"
     )
+

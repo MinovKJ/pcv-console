@@ -57,3 +57,4 @@ app.include_router(dashboard_router)
 @app.get("/health", tags=["meta"])
 async def health():
     return {"status": "ok", "service": "pcv-console"}
+

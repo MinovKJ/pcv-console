@@ -18,3 +18,4 @@ class AlertAssignment(Base):
     assigned_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     case: Mapped["Case"] = relationship("Case", back_populates="alert_assignments")
+

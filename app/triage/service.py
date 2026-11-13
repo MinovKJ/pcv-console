@@ -23,29 +23,60 @@ _cfg = get_settings()
 
 # ── Graph serialization helpers (inline, no PCV import needed) ─────────────────
 
-def _serialize_format_a(nodes: list[dict], edges: list[dict]) -> str:
+def _to_node_dict(n: Any) -> dict:
+    if hasattr(n, "model_dump"):
+        return n.model_dump()
+    if isinstance(n, dict):
+        return n
+    return {
+        "id": getattr(n, "id", str(n)),
+        "name": getattr(n, "name", None),
+        "type": getattr(n, "type", "?"),
+    }
+
+
+def _to_edge_dict(e: Any) -> dict:
+    if hasattr(e, "model_dump"):
+        return e.model_dump()
+    if isinstance(e, dict):
+        return e
+    return {
+        "source": getattr(e, "source", ""),
+        "target": getattr(e, "target", ""),
+        "relation": getattr(e, "relation", "?"),
+        "timestamp": getattr(e, "timestamp", None),
+    }
+
+
+def _serialize_format_a(nodes: list[Any], edges: list[Any]) -> str:
+    node_dicts = [_to_node_dict(n) for n in nodes]
+    edge_dicts = [_to_edge_dict(e) for e in edges]
     lines = ["### FORMAT A: CHRONOLOGICAL PROVENANCE STREAM", "Observed System Entities:"]
-    for n in nodes:
-        lines.append(f'  - Canonical ID: "{n["id"]}" | Display Name: "{n.get("name", n["id"])}" (Type: {n.get("type","?")})')
+    for n in node_dicts:
+        nid = str(n.get("id", ""))
+        lines.append(f'  - Canonical ID: "{nid}" | Display Name: "{n.get("name") or nid}" (Type: {n.get("type", "?")})')
     lines.append("\nChronological Sequence of Interactions:")
-    for e in sorted(edges, key=lambda x: x.get("timestamp") or float("inf")):
+    for e in sorted(edge_dicts, key=lambda x: x.get("timestamp") if x.get("timestamp") is not None else float("inf")):
         t = e.get("timestamp")
         t_str = f"t={t}" if t is not None else "time=N/A"
-        lines.append(f'  [{t_str}] "{e["source"]}" --{e.get("relation","?")}---> "{e["target"]}"')
+        lines.append(f'  [{t_str}] "{e.get("source", "")}" --{e.get("relation", "?")}---> "{e.get("target", "")}"')
     return "\n".join(lines)
 
 
-def _serialize_format_b(nodes: list[dict], edges: list[dict]) -> str:
+def _serialize_format_b(nodes: list[Any], edges: list[Any]) -> str:
     from collections import defaultdict
+    node_dicts = [_to_node_dict(n) for n in nodes]
+    edge_dicts = [_to_edge_dict(e) for e in edges]
     by_src: dict = defaultdict(list)
-    for e in edges:
-        by_src[str(e["source"])].append(e)
+    for e in edge_dicts:
+        by_src[str(e.get("source", ""))].append(e)
     lines = ["### FORMAT B: TYPED GRAPH ADJACENCY RECORDS", "Observed System Entities:"]
-    for n in nodes:
-        lines.append(f'  - Canonical ID: "{n["id"]}" | Display Name: "{n.get("name", n["id"])}" (Type: {n.get("type","?")})')
+    for n in node_dicts:
+        nid = str(n.get("id", ""))
+        lines.append(f'  - Canonical ID: "{nid}" | Display Name: "{n.get("name") or nid}" (Type: {n.get("type", "?")})')
     lines.append("\nDirected Graph Adjacency Records:")
-    for n in nodes:
-        src = str(n["id"])
+    for n in node_dicts:
+        src = str(n.get("id", ""))
         outgoing = by_src.get(src, [])
         lines.append(f'  From Node "{src}":')
         if not outgoing:
@@ -54,7 +85,7 @@ def _serialize_format_b(nodes: list[dict], edges: list[dict]) -> str:
             for e in outgoing:
                 t = e.get("timestamp")
                 t_str = f"t={t}" if t is not None else "time=N/A"
-                lines.append(f'    --> "{e["target"]}" [Relation: {e.get("relation","?")} | {t_str}]')
+                lines.append(f'    --> "{e.get("target", "")}" [Relation: {e.get("relation", "?")} | {t_str}]')
     return "\n".join(lines)
 
 
@@ -116,8 +147,8 @@ async def run_triage(
     run_id = str(uuid.uuid4())
     t0 = time.monotonic()
 
-    nodes = request.graph.nodes
-    edges = request.graph.edges
+    nodes = [_to_node_dict(n) for n in request.graph.nodes]
+    edges = [_to_edge_dict(e) for e in request.graph.edges]
     fmt = request.format.lower()
 
     # 1. Serialise the graph
@@ -225,3 +256,4 @@ async def run_triage(
         metrics=metrics,
         verifier_source=verifier_result.get("source", "unknown"),
     )
+

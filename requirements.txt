@@ -6,7 +6,7 @@ pydantic-settings==2.6.1
 
 # Auth
 python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+bcrypt==4.2.1
 python-multipart==0.0.20
 
 # MySQL (async)
@@ -21,3 +21,4 @@ pymongo==4.10.1
 # HTTP client & misc
 httpx==0.28.1
 python-dotenv==1.0.1
+
