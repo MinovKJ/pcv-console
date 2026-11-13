@@ -46,3 +46,4 @@ def test_refresh_token_creation_and_decoding():
 def test_invalid_token_raises():
     with pytest.raises(JWTError):
         decode_token("invalid.token.payload")
+

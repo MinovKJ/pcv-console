@@ -28,3 +28,4 @@ def test_case_update_partial():
 def test_alert_assign_request():
     req = AlertAssignRequest(alert_mongo_id="mongo_alert_123")
     assert req.alert_mongo_id == "mongo_alert_123"
+
