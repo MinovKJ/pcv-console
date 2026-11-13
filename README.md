@@ -4,7 +4,7 @@
 
 Built on top of the Provenance Claim Verifier (PCV) research engine. Analysts submit EDR alerts or provenance subgraphs; the system runs pre-LLM injection detection, LLM-assisted triage, and deterministic structural verification — then stores everything for search and reporting.
 
-> **Isolation note:** This is a standalone engineering project. It imports the PCV verifier as a dependency via an adapter. The PCV research repository (`rp/`) is never modified here.
+> **Architecture note:** This is a standalone engineering backend. It connects to the provenance claim verifier via an adapter interface, keeping the console decoupled from core verification engine implementations.
 
 ---
 
@@ -148,11 +148,11 @@ If the PCV package is not installed, it falls back to a stub that marks all clai
 To use the real verifier:
 
 ```bash
-# From the console project root:
-pip install -e /path/to/rp
+# Install the core verifier package (e.g. from private repo or local package):
+pip install -e /path/to/pcv-core
 ```
 
-or add `pcv @ file:///path/to/rp` to `requirements.txt`.
+or add `pcv-core` to `requirements.txt`.
 
 ---
 

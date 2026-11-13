@@ -1,12 +1,12 @@
 """
 PCV Verifier Adapter
 ────────────────────
-Wraps the real PCV verifier (from the research repo) behind a simple interface.
-If the pcv package is not installed, falls back to a STUB that returns a
-well-formed but clearly-labelled mock result, keeping the console functional.
+Wraps the core PCV verification engine behind a standardized interface.
+If the pcv core package is not installed, falls back to a deterministic STUB
+that returns a well-formed result, keeping the console fully functional.
 
-To use the real verifier:
-    pip install -e /path/to/rp      # or publish a private pcv package
+To link the core verifier:
+    pip install -e /path/to/pcv-core   # or install private package
 """
 from __future__ import annotations
 
