@@ -16,13 +16,24 @@ from app.triage.router import router as triage_router
 from app.dashboard.router import router as dashboard_router
 
 
+import asyncio
+import os
+import logging
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: create MySQL tables (dev mode; use Alembic in production)
-    await create_all_tables()
+    if os.getenv("FASTAPI_OFFLINE") != "1":
+        try:
+            await asyncio.wait_for(create_all_tables(), timeout=2.0)
+        except Exception as e:
+            logging.warning(f"Database connection skipped/failed ({e}). Continuing in offline/docs mode.")
     yield
     # Shutdown: close Mongo connection pool
-    await close_mongo()
+    try:
+        await close_mongo()
+    except Exception:
+        pass
 
 
 app = FastAPI(
