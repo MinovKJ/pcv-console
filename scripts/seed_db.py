@@ -8,6 +8,7 @@ Usage:
 import asyncio
 import sys
 import os
+import secrets
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -23,6 +24,10 @@ import uuid
 
 async def seed_mysql():
     await create_all_tables()
+
+    admin_pass = os.getenv("SEED_ADMIN_PASSWORD") or secrets.token_urlsafe(16)
+    analyst_pass = os.getenv("SEED_ANALYST_PASSWORD") or secrets.token_urlsafe(16)
+
     async with AsyncSessionLocal() as db:
         # Create admin user
         result = await db.execute(select(User).where(User.username == "admin"))
@@ -30,7 +35,7 @@ async def seed_mysql():
             admin = User(
                 username="admin",
                 email="admin@pcvconsole.local",
-                hashed_password=hash_password("admin1234"),
+                hashed_password=hash_password(admin_pass),
                 role=UserRole.admin,
             )
             db.add(admin)
@@ -41,13 +46,18 @@ async def seed_mysql():
             analyst = User(
                 username="analyst1",
                 email="analyst1@pcvconsole.local",
-                hashed_password=hash_password("analyst1234"),
+                hashed_password=hash_password(analyst_pass),
                 role=UserRole.analyst,
             )
             db.add(analyst)
 
         await db.commit()
-        print("[MySQL] Seeded: admin, analyst1")
+        print("\n=======================================================")
+        print(" [MySQL] Initial Users Provisioned:")
+        print(f" -> admin:    username='admin'    password='{admin_pass}' (role: admin)")
+        print(f" -> analyst1: username='analyst1' password='{analyst_pass}' (role: analyst)")
+        print(" Store these credentials securely; change upon first login.")
+        print("=======================================================\n")
 
 
 async def seed_mongo():

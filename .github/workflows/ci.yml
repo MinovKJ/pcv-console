@@ -24,9 +24,9 @@ jobs:
           pip install -r requirements-dev.txt
           pip install aiosqlite   # for in-memory SQLite tests
 
-      - name: Run tests (offline, no DB required)
+      - name: Run full test suite (30 unit & integration tests)
         run: |
-          pytest tests/test_injection_guard.py tests/test_verifier_adapter.py -v --cov=app --cov-report=term-missing
+          pytest tests/ -v --cov=app --cov-report=term-missing
 
   docker-compose-check:
     runs-on: ubuntu-latest

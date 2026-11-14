@@ -38,50 +38,43 @@ def _assert_well_formed(result: dict):
         assert k in result, f"Missing key: {k}"
 
 
-def test_stub_well_formed():
-    result = _stub_verification(DIRECT_CLAIMS, PATH_CLAIMS, ACCUSED)
+def test_demo_verifier_well_formed():
+    result = run_verification(NODES, EDGES, DIRECT_CLAIMS, PATH_CLAIMS, ACCUSED)
     _assert_well_formed(result)
-    assert result["source"] == "stub"
-    # Stub marks everything UNVERIFIABLE — zero valid
-    assert result["direct_valid"] == 0
-    assert result["direct_unverifiable"] == len(DIRECT_CLAIMS)
-    assert result["accepted_nodes"] == []
+    assert result["source"] in ("pcv", "demo_verifier")
+    assert result["direct_claims_count"] == len(DIRECT_CLAIMS)
+    assert result["path_claims_count"] == len(PATH_CLAIMS)
 
 
 def test_run_verification_returns_well_formed():
     result = run_verification(NODES, EDGES, DIRECT_CLAIMS, PATH_CLAIMS, ACCUSED)
     _assert_well_formed(result)
-    assert result["source"] in ("pcv", "stub")
+    assert result["source"] in ("pcv", "demo_verifier")
 
 
-def test_pcv_verifier_valid_edge():
-    """If PCV is installed, the first direct claim (101->202 fork) should be VALID."""
+def test_verifier_valid_edge():
+    """First direct claim (101->202 fork) exists in graph and must be VALID."""
     result = run_verification(NODES, EDGES, DIRECT_CLAIMS[:1], [], ACCUSED)
-    if result["source"] == "pcv":
-        assert result["direct_valid"] == 1
-        assert result["direct_invalid"] == 0
-    else:
-        # Stub mode — just verify keys
-        _assert_well_formed(result)
+    assert result["direct_valid"] == 1
+    assert result["direct_invalid"] == 0
+    assert "101" in result["accepted_nodes"]
+    assert "202" in result["accepted_nodes"]
 
 
-def test_pcv_verifier_fabricated_target_invalid():
-    """If PCV is installed, the second claim (202->999 exec) should be INVALID (node 999 absent)."""
+def test_verifier_fabricated_target_invalid():
+    """Second claim (202->999 exec) targets non-existent node 999 and must be INVALID."""
     result = run_verification(NODES, EDGES, DIRECT_CLAIMS[1:2], [], ACCUSED)
-    if result["source"] == "pcv":
-        assert result["direct_valid"] == 0
-        assert result["direct_invalid"] >= 1
-    else:
-        _assert_well_formed(result)
+    assert result["direct_valid"] == 0
+    assert result["direct_invalid"] == 1
 
 
-def test_pcv_verifier_valid_path():
-    """Full 4-hop path 101->202->303->404 should be VALID when PCV is installed."""
+def test_verifier_valid_path():
+    """Full 4-hop path 101->202->303->404 has valid edges and non-decreasing timestamps; must be VALID."""
     result = run_verification(NODES, EDGES, [], PATH_CLAIMS, ACCUSED)
-    if result["source"] == "pcv":
-        assert result["path_valid"] == 1
-    else:
-        _assert_well_formed(result)
+    assert result["path_valid"] == 1
+    assert result["path_invalid"] == 0
+    for node_id in ["101", "202", "303", "404"]:
+        assert node_id in result["accepted_nodes"]
 
 
 def test_empty_claims_no_crash():

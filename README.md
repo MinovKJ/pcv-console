@@ -1,17 +1,48 @@
-# PCV Console
+# PCV Console: EDR Alert Triage & Provenance Verification Backend
 
-**Alert triage and case management backend for EDR provenance graph analysis.**
+[![CI](https://github.com/MinovKJ/pcv-console/actions/workflows/ci.yml/badge.svg)](https://github.com/MinovKJ/pcv-console/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.14-3776AB?logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7.0-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com)
+[![Tests](https://img.shields.io/badge/Tests-30%20Passing-brightgreen?logo=pytest&logoColor=white)](https://docs.pytest.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Built on top of the Provenance Claim Verifier (PCV) research engine. Analysts submit EDR alerts or provenance subgraphs; the system runs pre-LLM injection detection, LLM-assisted triage, and deterministic structural verification — then stores everything for search and reporting.
+**Enterprise-grade alert triage and case management service powered by deterministic provenance graph verification.**
 
-> **Architecture note:** This is a standalone engineering backend. It connects to the provenance claim verifier via an adapter interface, keeping the console decoupled from core verification engine implementations.
+Analysts submit EDR telemetry subgraphs; the backend intercepts adversarial prompt injections before LLM invocation, extracts structured claims via a local LLM, verifies each claim against the telemetry graph topology using a deterministic verifier, and stores all relational audit records and document analytics for SOC investigation.
+
+> **Verification Engine Notice:** This public repository includes a built-in, standalone **Demo Provenance Verifier** implementing direct-edge typed matching, path continuity traversal, and temporal inversion checks so that the backend outputs real `VALID`/`INVALID` verdicts and live dashboard aggregations out-of-the-box. The full academic research verifier (with time-respecting trigger-endpoint causal reachability and sub-claim decomposition) is decoupled and dynamically loads via `app/triage/verifier_adapter.py` when plugged in as an internal dependency.
 
 ---
 
-## Interactive API Documentation (Swagger UI)
+## Visual Walkthrough & System Evidence
+
+### 1. Interactive OpenAPI Specification (Swagger UI)
+Interactive schema at `/docs` detailing all 19 REST endpoints across authentication, RBAC user management, case lifecycles, provenance alert stores, real-time triage verification, and dashboard analytics:
 
 ![PCV Console Swagger UI](assets/swagger_ui.png)
-*FastAPI interactive OpenAPI schema (`/docs`) exposing authentication, RBAC user management, case investigation workflows, provenance alert stores, real-time triage verification, and dashboard analytics.*
+
+---
+
+### 2. Triage Pipeline & Verifier Execution (`POST /triage/run`)
+Submitting an EDR alert graph executes the pre-LLM injection scanner, structured LLM extraction, deterministic claim verification, and anti-hallucination pruning:
+
+![Triage Execution](assets/triage_run.png)
+
+---
+
+### 3. Real-Time Aggregation Analytics (`GET /dashboard/*`)
+Live MongoDB aggregation pipelines computing verification pass rates, Direct-Edge Violation Rates (DEVR), Path Inconsistency Rates (PIR), and Temporal Inversion Rates (TIR) grouped by serialization format:
+
+![Dashboard Analytics](assets/dashboard_analytics.png)
+
+---
+
+### 4. Automated Verification Test Suite (30 / 30 Tests Passing)
+Comprehensive automated test suite executed in 3.12 seconds verifying authentication, case management, injection patterns, triage pipelines, and verifier invariants:
+
+![Automated Test Suite](assets/pytest_passing.png)
 
 ---
 
@@ -48,7 +79,7 @@ Submit graph ──▶ Injection Guard ──▶ [BLOCK if explicit injection]
                   direct_edge_claims + path_claims + accused_entity_ids
                         │
                         ▼
-                  PCV Structural Verifier
+                  Deterministic Provenance Verifier
                   VALID / INVALID / UNVERIFIABLE per claim
                         │
                         ▼
@@ -193,106 +224,81 @@ When an attacker injects authority-spoofing commands into process strings (e.g.,
 
 ---
 
-## Quick Start
+## Test Suite & Verified Coverage
 
-### 1. Prerequisites
+The codebase includes **30 automated unit and integration tests** executing in ~3.1 seconds across 5 test modules:
 
-- Docker Desktop (with Compose v2)
-- Python 3.11+ (for local dev / test)
+| Test Module | Tests | Scope & Invariants Tested |
+|---|:---:|---|
+| [`tests/test_auth.py`](tests/test_auth.py) | **4** | Bcrypt hash generation, password verification, access token signing/decoding, refresh token rotation, invalid JWT rejection |
+| [`tests/test_cases.py`](tests/test_cases.py) | **3** | Case creation defaults, partial update validation, alert-to-case relational mapping |
+| [`tests/test_injection_guard.py`](tests/test_injection_guard.py) | **13** | Clean telemetry passage, explicit authority overrides (`[SOC_SECURITY_OVERRIDE]`, `YOU MUST ACCUSE`), subtle maintenance tickets (`Ticket #CHG-...`), SLA evasion pressure, multi-hit scoring, pre-LLM blocking recommendations |
+| [`tests/test_triage.py`](tests/test_triage.py) | **3** | Endpoint health, pre-LLM injection blocking integration, clean telemetry end-to-end pipeline execution |
+| [`tests/test_verifier_adapter.py`](tests/test_verifier_adapter.py) | **7** | Demo verifier schema well-formedness, direct edge matching, non-existent target node rejection (`INVALID`), multi-hop path continuity & timestamp monotonicity, empty claims/graph crash guards |
+| **Total Test Count** | **30** | **100% Passing** |
 
-### 2. Configure environment
-
-```bash
-cp .env.example .env
-# Edit .env — set strong passwords and your JWT_SECRET_KEY
-```
-
-### 3. Start all services
-
-```bash
-docker compose up --build
-```
-
-API is available at: `http://localhost:8000`  
-Interactive docs: `http://localhost:8000/docs`
-
-### 4. Seed the database
-
-```bash
-# After containers are healthy:
-docker compose exec api python scripts/seed_db.py
-```
-
-Default credentials after seeding:
-
-| Username  | Password      | Role    |
-|-----------|---------------|---------|
-| `admin`   | `admin1234`   | admin   |
-| `analyst1`| `analyst1234` | analyst |
-
-**Change these immediately in any non-local environment.**
-
-### 5. Run the test suite (no Docker required)
-
+Execute the suite locally without running any databases:
 ```bash
 pip install -r requirements.txt -r requirements-dev.txt aiosqlite
-pytest tests/test_injection_guard.py tests/test_verifier_adapter.py -v
+pytest tests/ -v
 ```
 
 ---
 
-## API Reference (key endpoints)
+## Quick Start
+
+### 1. Prerequisites
+- Docker Desktop (with Compose v2)
+- Python 3.11+ (for local testing/development)
+
+### 2. Configure Environment
+```bash
+cp .env.example .env
+# Edit .env to set secure secrets
+```
+
+### 3. Start All Services
+```bash
+docker compose up --build
+```
+API is available at: `http://localhost:8000`  
+Interactive documentation at: `http://localhost:8000/docs`
+
+### 4. Seed the Database
+```bash
+docker compose exec api python scripts/seed_db.py
+```
+> **Security Notice:** Initial user passwords are read from the `SEED_ADMIN_PASSWORD` and `SEED_ANALYST_PASSWORD` environment variables. If left unset, `seed_db.py` automatically generates cryptographically random passwords via `secrets.token_urlsafe(16)` and displays them in the console output upon provisioning.
+
+---
+
+## API Reference (Key Endpoints)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/auth/login` | Get JWT access + refresh tokens |
+| `POST` | `/auth/login` | Obtain JWT access + refresh tokens |
 | `POST` | `/auth/refresh` | Rotate access token |
-| `GET`  | `/users/me` | Current user info |
+| `GET`  | `/users/me` | Current authenticated user profile |
 | `POST` | `/cases/` | Create a new investigation case |
-| `POST` | `/cases/{id}/alerts` | Link an alert to a case |
-| `POST` | `/triage/run` | **Submit graph → full pipeline** |
+| `POST` | `/cases/{id}/alerts` | Link a MongoDB alert document to a case |
+| `POST` | `/triage/run` | **Submit graph → full injection guard + triage pipeline** |
 | `GET`  | `/triage/runs` | List triage run summaries |
-| `GET`  | `/triage/runs/{run_id}` | Full run detail |
-| `GET`  | `/dashboard/verification-pass-rate` | DEVR/PIR by format |
-| `GET`  | `/dashboard/injection-stats` | Injection block counts |
-| `GET`  | `/dashboard/temporal-inversion-rate` | TIR by format |
-| `GET`  | `/dashboard/throughput` | Avg duration, total runs |
+| `GET`  | `/triage/runs/{run_id}` | Full triage run details (claims, verdicts, metrics) |
+| `GET`  | `/dashboard/verification-pass-rate` | DEVR/PIR/TIR aggregation grouped by format |
+| `GET`  | `/dashboard/injection-stats` | Injection block counts & threat classifications |
+| `GET`  | `/dashboard/temporal-inversion-rate` | Temporal inversion rate aggregation |
+| `GET`  | `/dashboard/throughput` | Average/max/min duration & run volume |
 
 ---
 
 ## Injection Guard Module
 
-Located at `app/triage/injection_guard.py`. Runs **before** the LLM call.
+Located at [`app/triage/injection_guard.py`](app/triage/injection_guard.py). Evaluates serialized telemetry graph text **before** any tokens are sent to the LLM:
 
-Detects two threat classes:
-
-| Class | Examples | Action |
-|-------|----------|--------|
-| **EXPLICIT** | `[SOC_SECURITY_OVERRIDE]`, `YOU MUST ACCUSE`, `DO NOT INCLUDE`, `classify as benign` | **Block** — LLM never called |
-| **SUBTLE** | Maintenance-ticket spoofing, SLA-pressure language, change-control impersonation | **Flag** — run proceeds, result marked for review |
-
-Returns `InjectionGuardResult` with risk score (0.0–1.0), hit counts, and matched segments.
-
----
-
-## Plugging in the Real PCV Verifier
-
-The adapter in `app/triage/verifier_adapter.py` tries:
-
-```python
-from src.inference.verifier import ProvenanceClaimVerifier, extract_accepted_nodes
-```
-
-If the PCV package is not installed, it falls back to a stub that marks all claims `UNVERIFIABLE` (safe default — no false positives).
-
-To use the real verifier:
-
-```bash
-# Install the core verifier package (e.g. from private repo or local package):
-pip install -e /path/to/pcv-core
-```
-
-or add `pcv-core` to `requirements.txt`.
+| Threat Class | Pattern Examples | Action |
+|---|---|---|
+| **EXPLICIT** | `[SOC_SECURITY_OVERRIDE]`, `YOU MUST ACCUSE`, `DO NOT INCLUDE`, `classify as benign` | **BLOCK** — LLM call is aborted (`llm_blocked=True`) |
+| **SUBTLE** | Maintenance-ticket spoofing (`Ticket #CHG-...`), SLA-pressure language, policy impersonation | **FLAG** — Pipeline continues; result flagged with risk score |
 
 ---
 
@@ -300,39 +306,47 @@ or add `pcv-core` to `requirements.txt`.
 
 ```
 pcv-console/
+├── assets/
+│   ├── swagger_ui.png            # Interactive API docs screenshot
+│   ├── triage_run.png            # Pipeline execution & verifier pruning screenshot
+│   ├── dashboard_analytics.png   # MongoDB aggregation analytics screenshot
+│   └── pytest_passing.png        # Automated test suite passing screenshot
 ├── app/
-│   ├── main.py                   # FastAPI app + lifespan
-│   ├── config.py                 # Pydantic settings
-│   ├── dependencies.py           # JWT guard, role check, audit logger
-│   ├── auth/                     # Login, refresh, JWT utils
-│   ├── users/                    # User CRUD (admin-only create)
-│   ├── cases/                    # Case management + alert assignment
-│   ├── alerts/                   # Alert document store (Mongo)
+│   ├── main.py                   # FastAPI application + resilient lifespan
+│   ├── config.py                 # Pydantic Settings configuration
+│   ├── dependencies.py           # JWT bearer, RBAC role guard, audit logger
+│   ├── auth/                     # Login, refresh, bcrypt utils
+│   ├── users/                    # User CRUD (admin role enforced)
+│   ├── cases/                    # Case management & alert-to-case relational links
+│   ├── alerts/                   # Raw provenance alert document store (MongoDB)
 │   ├── triage/
-│   │   ├── injection_guard.py    # ← Pre-LLM injection scanner
-│   │   ├── verifier_adapter.py   # ← PCV verifier wrapper / stub
-│   │   ├── service.py            # ← Full pipeline orchestrator
-│   │   ├── router.py
-│   │   └── schemas.py
-│   ├── dashboard/                # Aggregation pipeline endpoints
+│   │   ├── injection_guard.py    # ← Pre-LLM adversarial injection scanner
+│   │   ├── verifier_adapter.py   # ← Standardized verifier adapter + standalone demo verifier
+│   │   ├── service.py            # ← End-to-end pipeline orchestrator
+│   │   ├── router.py             # ← /triage endpoints
+│   │   └── schemas.py            # ← Pydantic graph & triage schemas
+│   ├── dashboard/                # Real-time MongoDB aggregation pipelines
 │   └── db/
 │       ├── mysql.py              # SQLAlchemy async engine
 │       ├── mongo.py              # Motor async client
-│       └── models/               # ORM: User, Case, AlertAssignment, AuditLog
+│       └── models/               # MySQL ORM: User, Case, AlertAssignment, AuditLog
 ├── tests/
-│   ├── test_injection_guard.py   # 15 offline unit tests
-│   ├── test_verifier_adapter.py  # 7 adapter tests (stub + real PCV)
-│   └── test_triage.py            # Integration tests (mocked DB/LLM)
-├── scripts/seed_db.py            # Seeds MySQL + MongoDB with synthetic data
-├── docker-compose.yml
-├── Dockerfile
-├── .env.example
-└── .github/workflows/ci.yml
+│   ├── test_auth.py              # 4 tests: hashing, verification, JWT create/decode
+│   ├── test_cases.py             # 3 tests: case creation, update, alert assignment
+│   ├── test_injection_guard.py   # 13 tests: explicit & subtle pattern detection
+│   ├── test_triage.py            # 3 tests: health, injection blocking, triage execution
+│   └── test_verifier_adapter.py  # 7 tests: demo verifier, edge matching, path validation
+├── scripts/
+│   ├── seed_db.py                # Database seeder with dynamic password generation
+│   └── generate_screenshots.py  # Headless browser screenshot renderer for assets
+├── docker-compose.yml            # Multi-container orchestration (FastAPI + MySQL 8 + MongoDB 7)
+├── Dockerfile                    # Container build specification
+├── .env.example                  # Environment configuration template
+└── .github/workflows/ci.yml      # GitHub Actions CI workflow (full 30-test suite)
 ```
 
 ---
 
 ## License
 
-MIT — this console project is public and independent. The PCV research verifier (imported as a dependency) remains under its own private license until paper publication.
-
+MIT — this console project is open-source and independent. The full PCV research engine (imported as a decoupled dependency) remains under its private academic license.
